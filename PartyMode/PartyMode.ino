@@ -1,17 +1,18 @@
-/* This Sketch Requires the GY-61 module and an Arduino Mega
+
+/* This Sketch Requires the GY-61 module and a Wifi Lora 32
  * 
  * Reading X, Y, Z axis values
  */
-
+#include "Arduino.h"
+#include "heltec.h"
 #include <Streaming.h>
-
 #include "ADXL335.h"
 
-int rLED = 49;
-int yLED = 50;
-int gLED = 51;
-int bLED = 52;
-int wLED = 53;
+int rLED = 27;
+int yLED = 26;
+int gLED = 25;
+int bLED = 16;
+int wLED = 17;
 
 float prevX, prevY, prevZ;
 int lightDelay = 45;
@@ -19,7 +20,7 @@ ADXL335 accelerometer;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   accelerometer.begin();
   pinMode(rLED, OUTPUT);
   pinMode(yLED, OUTPUT);
@@ -29,6 +30,7 @@ void setup()
 }
 
 void lightShow() {
+    Serial.println("SHOW ME!!");
     digitalWrite(rLED, HIGH);
     delay(lightDelay);
     digitalWrite(yLED, HIGH);
