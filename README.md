@@ -21,6 +21,8 @@ I've come across a few youtube videos of people [smoking a JUUL Pod without a Ju
 
 There must be a better way to smoke without a Juul, right?
 
+# Q&A
+
 What is the resistance of the Juul coil? **1.8-1.9Ω [±(0.8% Reading)](https://images-na.ssl-images-amazon.com/images/I/B1L2Wl6BZLS.pdf)**
 
 <p align="center">
@@ -28,11 +30,15 @@ What is the resistance of the Juul coil? **1.8-1.9Ω [±(0.8% Reading)](https://
 </p>
 
 
-What is the output voltage? With full charge, the voltage measured was **2.985V [±(0.5% Reading)](https://images-na.ssl-images-amazon.com/images/I/B1L2Wl6BZLS.pdf)**
+What is the output voltage? With full charge, the voltage measured was **2.985V ±(0.5%)**
 <p align="center">
  <img src = "/Assets/VoltageOutput.jpg" height = "475"> 
 </p>
 
+What is the ouput current? **15.72 μA ±(0.8%)**
+<p align="center">
+ <img src = "/Assets/OutputCurrent.jpg" height = "475"> 
+</p>
 
 
 
