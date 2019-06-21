@@ -6,6 +6,9 @@
 #include "Arduino.h"
 #include "heltec.h"
 #include <WiFi.h>
+#include <WiFiClient.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
 #include <Streaming.h>
 #include "ADXL335.h"
 #include "images.h"
@@ -28,8 +31,9 @@ ADXL335 accelerometer;
 /**********************************************  WIFI Client *********************************
  * wifi client
  */
-const char* ssid = "XXXX"; 
-const char* password = "XXXX"; 
+const char* ssid = "xxx"; 
+const char* password = "xxx"; 
+WebServer server(80);
 
 /********************************************************************
  * setup oled
@@ -43,64 +47,93 @@ void setupOLED()
   digitalWrite(RST_OLED, HIGH);       // while OLED is running, must set D16 in high
   
   Heltec.display->init();
-  Heltec.display->flipScreenVertically();           //倒过来显示内容
-  Heltec.display->setFont(ArialMT_Plain_10);        //设置字体大小
-  Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);//设置字体对齐方式
+  Heltec.display->flipScreenVertically();           
+  Heltec.display->setFont(ArialMT_Plain_10);        
+  Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
 
   Heltec.display->clear();
   Heltec.display->drawString(0, 0, "Initialize...");
 }
 
 /*********************************************************************
- * setup wifi
+ * wifi image
  */
  void drawWifiImage() {
     // see http://blog.squix.org/2015/05/esp8266-nodemcu-how-to-create-xbm.html
     // on how to create xbm files
-    Heltec.display->drawXbm(34, 14, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
+    Heltec.display->drawXbm(34, 25, WiFi_Logo_width, WiFi_Logo_height, WiFi_Logo_bits);
 }
 
-void setupWIFI()
+/*********************************************************************
+ * Client
+ */
+ void handleRoot() {
+  server.send(200, "text/plain", "hello from smart Juul!");
+}
+
+void handleNotFound() {
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+}
+
+void setupClient() 
 {
-  Heltec.display->clear();
-  Heltec.display->drawString(0, 0, "Connecting...");
-  Heltec.display->drawString(0, 10, String(ssid));
-  Heltec.display->display();
-  
-
-  WiFi.disconnect(true);
-  delay(1000);
-  
-  WiFi.mode(WIFI_STA);  
-  WiFi.setAutoConnect(true);      
-  WiFi.setAutoReconnect(true);    
+  WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
+  Serial.println("");
 
-  byte count = 0;
-  while(WiFi.status() != WL_CONNECTED && count < 10)
-  {
-    count ++;
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
 
-  Heltec.display->clear();
+  
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
   if(WiFi.status() == WL_CONNECTED) 
   {
-    Heltec.display->drawString(0, 0, "Connecting...OK."); 
-    Serial.println("Done!");
-    // clear the display
     Heltec.display->clear();
+    Heltec.display->drawString(0, 0, "Connecting to " + String(ssid)); 
+    Heltec.display->drawString(0, 10, "IP address:" + WiFi.localIP().toString()); 
     drawWifiImage();
-    Heltec.display->setTextAlignment(TEXT_ALIGN_RIGHT);
-    Heltec.display->drawString(10, 128, String(millis()));
-    // write the buffer to the display
-    Heltec.display->display();
+    Heltec.display->setTextAlignment(TEXT_ALIGN_LEFT);
+    Heltec.display->drawString(20, 128, String(millis()));
   }  
   else {
     Heltec.display->drawString(0, 0, "Connecting...Failed");
   }
   Heltec.display->display();
+  
+
+  if (MDNS.begin("esp32")) {
+    Serial.println("MDNS responder started");
+  }
+
+  server.on("/", handleRoot);
+
+  server.on("/inline", []() {
+    server.send(200, "text/plain", "this works as well");
+  });
+
+  server.onNotFound(handleNotFound);
+
+  server.begin();
+  Serial.println("HTTP server started");
 }
 
 
@@ -108,7 +141,6 @@ void setup()
 {
   Heltec.begin(true /*DisplayEnable Enable*/, false /*LoRa Disable*/, false /*Serial Enable*/);
   Serial.println("Initialize...");
-
   Serial.begin(115200);
   accelerometer.begin();
   pinMode(rLED, OUTPUT);
@@ -117,7 +149,7 @@ void setup()
   pinMode(bLED, OUTPUT);
   pinMode(wLED, OUTPUT);
   setupOLED();
-  setupWIFI();
+  setupClient();
 }
 
 void lightShow() {
@@ -148,6 +180,7 @@ float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
 
 void loop()
 {
+  server.handleClient();
   float ax,ay,az;
   accelerometer.getAcceleration(&ax,&ay,&az);
  /*
