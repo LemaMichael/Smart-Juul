@@ -12,12 +12,25 @@
 #include <Streaming.h>
 #include "ADXL335.h"
 #include "images.h"
+#include "Adafruit_MQTT.h"
+#include "Adafruit_MQTT_Client.h"
 
-int rLED = 27;
-int yLED = 17;
-int gLED = 25;
-int bLED = 2;
-int wLED = 23;
+
+#define AIO_SERVER      "io.adafruit.com"
+#define AIO_SERVERPORT  1883                  
+#define AIO_USERNAME    "" // Input AIO Credentials here:
+#define AIO_KEY         ""
+
+WiFiClient client;
+Adafruit_MQTT_Client mqtt(&client, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);       
+Adafruit_MQTT_Subscribe JUUL_Control = Adafruit_MQTT_Subscribe(&mqtt, AIO_USERNAME "/feeds/JuulSwitch", MQTT_QOS_1);
+
+const int activateLED = 0;
+const int rLED = 27;
+const int yLED = 17;
+const int gLED = 25;
+const int bLED = 2;
+const int wLED = 23;
 
 float prevX, prevY, prevZ;
 int lightDelay = 30;
@@ -31,8 +44,8 @@ ADXL335 accelerometer;
 /**********************************************  WIFI Client *********************************
  * wifi client
  */
-const char* ssid = "xxx"; 
-const char* password = "xxx"; 
+const char* ssid = ""; 
+const char* password = ""; 
 WebServer server(80);
 
 /********************************************************************
@@ -69,6 +82,16 @@ void setupOLED()
  */
  void handleRoot() {
   server.send(200, "text/plain", "hello from smart Juul!");
+}
+
+void handlePod(){
+  Serial.println("hear you!!!");
+  digitalWrite(activateLED, HIGH);
+  server.send(200, "text/plain", "activated your smart juul!");
+  //delay(2500);
+  delay(15000);
+  digitalWrite(activateLED, LOW);
+  Serial.println("ENDED!!!");
 }
 
 void handleNotFound() {
@@ -130,6 +153,8 @@ void setupClient()
     server.send(200, "text/plain", "this works as well");
   });
 
+  server.on("/activate", handlePod);
+
   server.onNotFound(handleNotFound);
 
   server.begin();
@@ -143,6 +168,8 @@ void setup()
   Serial.println("Initialize...");
   Serial.begin(115200);
   accelerometer.begin();
+  pinMode(activateLED, OUTPUT);
+  digitalWrite(activateLED, LOW);
   pinMode(rLED, OUTPUT);
   pinMode(yLED, OUTPUT);
   pinMode(gLED, OUTPUT);
@@ -150,6 +177,7 @@ void setup()
   pinMode(wLED, OUTPUT);
   setupOLED();
   setupClient();
+  mqtt.subscribe(&JUUL_Control);
 }
 
 void lightShow() {
@@ -178,8 +206,31 @@ float fmap(float x, float in_min, float in_max, float out_min, float out_max) {
   return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
+//https://learn.adafruit.com/mqtt-adafruit-io-and-you/more-on-subscriptions
+void AdaSubscription() {
+  Adafruit_MQTT_Subscribe *subscription;
+  while ((subscription = mqtt.readSubscription(5000))) {
+    // Check if its the JUUL_Control  feed
+    if (subscription == &JUUL_Control) {
+      Serial.print(F("JUUL_Control: "));
+      Serial.println((char *)JUUL_Control.lastread);
+
+      //https://io.adafruit.com/eeUser/dashboards/juulswitch
+      if (strcmp((char *)JUUL_Control.lastread, "ON") == 0) {
+        handlePod();
+      }
+      if (strcmp((char *)JUUL_Control.lastread, "OFF") == 0) {
+        handlePod();
+      }
+    }
+}
+}
+
+
 void loop()
 {
+  //MQTT_connect();
+  //AdaSubscription();
   server.handleClient();
   float ax,ay,az;
   accelerometer.getAcceleration(&ax,&ay,&az);
@@ -201,5 +252,32 @@ void loop()
    prevX = ax;
    prevY = ay;
    prevZ = az;
-   
+
+}
+
+// Function to connect and reconnect as necessary to the MQTT server.
+// Should be called in the loop function and it will take care if connecting.
+void MQTT_connect() {
+  int8_t ret;
+
+  // Stop if already connected.
+  if (mqtt.connected()) {
+    return;
+  }
+
+  Serial.print("Connecting to MQTT... ");
+
+  uint8_t retries = 3;
+  while ((ret = mqtt.connect()) != 0) { // connect will return 0 for connected
+       Serial.println(mqtt.connectErrorString(ret));
+       Serial.println("Retrying MQTT connection in 10 seconds...");
+       mqtt.disconnect();
+       delay(10000);  // wait 10 seconds
+       retries--;
+       if (retries == 0) {
+         // basically die and wait for WDT to reset me
+         while (1);
+       }
+  }
+  Serial.println("MQTT Connected!");
 }
