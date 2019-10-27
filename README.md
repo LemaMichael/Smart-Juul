@@ -1,12 +1,31 @@
 # Smart-Juul
-A DIY Juul with Wifi and Bluetooth 
+A DIY Juul with Wifi and Bluetooth. I extended this project to include a robot that can be controller with an IR controller
 
 
 # Requirements
-- [ ] Work
-- [ ] Party Mode Enabled
-- [ ] Connect to Google Home (WiFi)
+- [x] Work
+- [x] Party Mode Enabled
+- [x] Connect to Google Home (WiFi) using IFTTT servers
 - [ ] Connect to iPhone (Bluetooth)
+
+
+# Robot (JUUL-E)
+<p align="center">
+ <img src = "/Assets/ClampDemo.gif" height = "475">  
+ <img src = "/Assets/TaserDemo.gif" height = "475"> 
+</p>
+
+The robot is called JUUL-E, inspired by the rising popularity of vaping devices. It can be controlled with any IR controller to pick up items such as the JUUL. For fun, I've attached a taser to the clamps of the robot.
+
+
+# Dog Friendly? Yes!
+<p align="center">
+ <img src = "/Assets/DogDemo.gif" height = "475">  
+ <img src = "/Assets/DogDemo2.gif" height = "475"> 
+</p>
+
+Here is JUUL-E playing with my dog. Note: The taser functionality is turned off! It will not operate if the robot is moving for everyone's safety. 
+
 
 # Background Information
 <p align="center">
