@@ -25,6 +25,7 @@ The robot is called JUUL-E, inspired by the rising popularity of vaping devices.
 </p>
 
 Here is JUUL-E playing with my dog. 
+
 *Note: The taser functionality is turned off! It will not operate if the robot is moving for everyone's safety.* 
 
 
